@@ -8,7 +8,7 @@ import re
 import matplotlib.tri as tri
 import shutil
 
-from functions_old import resampling
+from Ratio_T1_PD.functions_old import resampling
 
 def inv_image(path_input, path_output):
     from subprocess import Popen, PIPE

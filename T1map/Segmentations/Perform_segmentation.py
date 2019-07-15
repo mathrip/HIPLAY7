@@ -15,15 +15,25 @@ def segmentation_tissus(input_path, output_dir):
     fslanat_output, fslanat_error = fslanat_cmd.communicate()
     return fslanat_output, fslanat_error
 
+def brain_extraction(path_input, path_output, fraction):
+    # subprocess.call('bet {} {} -f {}'.format(path_input,path_output,fraction),shell=True)
+    from subprocess import Popen, PIPE
+    bet = ["bet",
+           "{}".format(path_input),
+           "{}".format(path_output),
+           "-m",
+           "-f", "{}".format(fraction),]
+    bet_cmd = Popen(bet, stdout=PIPE)
+    bet_output, bet_error = bet_cmd.communicate()
+    return bet_output, bet_error
 
-def cortical_parcellation(input_file, output_dir, name, expert_file,subject_dir):
+def cortical_parcellation(input_file, subj_name, freesurf_output_dir, expert_file):
     # segmentation on CSF, WM and GM using the freesurfer recon-all pipeline
     # input :T1w contrast
     from subprocess import Popen, PIPE
-    recon_all = ["export SUBJECTS_dir=","{}".format(subject_dir),
-                   "recon-all",
-                   "-sd", "{}".format(output_dir),
-                   "-s", "{}".format(name),
+    recon_all = ["recon-all",
+                   "-sd", "{}".format(freesurf_output_dir),
+                   "-s", "{}".format(subj_name),
                    "-i", "{}".format(input_file),
                    "-hires",
                    "-all",
@@ -45,40 +55,33 @@ def segmentation_Hippo(name, subjects_dir):
     seghip_output, seghip_error = seghip_cmd.communicate()
     return seghip_output, seghip_error
 
-def apply_pipeline_seg(path_directory,steps):
-
-    input_name= 't1uni_den.nii.gz'
-    input_path = os.path.join(path_directory, steps[0],input_name)
-    output_dir_name = 'Tissus_seg'
+def apply_pipeline_seg(path_directory,steps,freesurf_output_dir,subj_name):
+    """ definition function
+    :param path_directory: string, description
+    :param steps:
+    :param freesurf_output_dir:
+    :param subj_name:
+    :return:
+    """
+    input_file= 't1uni_den.nii.gz'
+    input_path = os.path.join(path_directory, steps[0],input_file)
+    output_dir_name = 'brain'
     output_dir= os.path.join(path_directory,steps[2],output_dir_name)
-
-    # Perform segmentation tissus
-    print("INFO : Start tissus segmentation")
-    output, error = segmentation_tissus(input_path,output_dir)
-    print("INFO : End of tissus segmentation")
+    output, error = brain_extraction(input_path, output_dir, 0.3)
 
     # Perform cortical segmentation and parcellation
-
-    file = '/home/mr259480/PycharmProjects/HIPLAY7/T1map/expert.opts'
-    expert_file = os.path.join(path_directory, steps[2], 'expert.opts')
-    shutil.copyfile(file, expert_file)
-
-    output_dir_name = 'Region_seg'
-    output_dir = os.path.join(path_directory, steps[2])
-
+    expert_file = os.path.join(freesurf_output_dir, 'expert.opts')
+    #
     print("INFO : Start cortical parcellation")
-    from subprocess import Popen, PIPE
-    command=['source /neurospin/grip/protocols/MRI/HIPLAY7_mr_2019/Prog/freesurfer/SetUpFreeSurfer.sh']   #set up environment freesurfer
-    executeCommand = Popen(command, stdout=PIPE)
-    output, error = cortical_parcellation(input_path, output_dir, output_dir_name, expert_file,subject_dir)
+    output, error = cortical_parcellation(input_path,subj_name,freesurf_output_dir, expert_file)
     print("INFO : End of cortical parcellation")
-
+    #
     # Perform Hippocampal segmentation
-
-    name_dir = 'Region_seg'
-    subjects_dir = os.path.join(path_directory, steps[2])
-
+    #
+    # subjects_dir = os.path.join(path_directory, steps[2])
+    #
     print("INFO : Start hippocampal segmentation")
-    output, error = segmentation_Hippo(name_dir, subjects_dir)
+    output, error = segmentation_Hippo(subj_name, freesurf_output_dir)
     print("INFO : End of hippocampa segmentation")
+
 
