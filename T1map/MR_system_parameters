@@ -1,0 +1,9 @@
+alpha1deg = 4
+alpha2deg = 5
+nbefore = 48
+nafter = 96
+TR = 6.9
+BTR = 6000
+TI1 = 800
+TI2 = 2700
+eff = 1
