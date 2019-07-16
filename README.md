@@ -25,7 +25,7 @@ myelin_content requires the following softaware and libraries :
   source $FREESURFER_HOME/SetUpFreeSurfer.sh
   ```
 ## Usage
-To launch `myelin_content_hippo.py`
+run `myelin_content_hippo.py [DATE_NIP] -b [b1map].nii(.gz) -t [t1].nii(.gz)`
 
 
 ## References 
