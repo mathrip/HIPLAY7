@@ -2,8 +2,6 @@
 
  `myelin_content.py`  – compute a myelin proxy (R1 values) for the grey matter and the white matter in differents regions of the hippocampus and the cortex 
 
-Note : The method employed does not give a reliable myeline proxy for the CSF. 
-
 ## Overview
 This program performs four steps and will create one folder for each step :
  1. **Inputs** : Extract the needed inputs from the acquisition folder. Results save as nifti format (.nii)
@@ -33,7 +31,6 @@ Please, make sure to add this two lines in you default setup file (.bashrc) :
   export FREESURFER_HOME=MyHome/pathWhereFreesurferHasBeenSTored
   source $FREESURFER_HOME/SetUpFreeSurfer.sh
 ```
-Note : This program has been test only on Linux.
 
 ### Installation
 - [ ] Copy the URL of the repository from GitHub
@@ -57,7 +54,10 @@ where :
 Exemple :\
 `myelin_content_hippo.py 20190719_mr331057 /home/Documents/Hiplay_results` 
 
-Notes : for more information about the inputs and the outputs data, please refers to each function description within the python script.
+Notes : 
+- The whole process can take up to 30h for images resolution of 0.75m
+- This program has been only test for Linux users.
+- For more information about the inputs/outputs data, please refers to the functions description within the python script.
 
 ## Authors
 
