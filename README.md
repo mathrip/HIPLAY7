@@ -20,9 +20,10 @@ Libraries :
    - numpy
    - pandas
    - scipy
-   - matplotlib\
+   - matplotlib
+
 If you do not have Python installed, we recommend to install Python 3.7 from the [anaconda distribution](https://www.anaconda.com/distribution/#linux) and to follow the [instructions](https://docs.anaconda.com/anaconda/install/linux/)\
-Each library can be then install using the following command : `pip install LibraryName`\
+Each library can be then install using the following command : `pip install LibraryName`
 
 - FSL 6.0
 To install FSL 6.0 please refers to the instructions found in the following website : [FslInstallation](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation/Linux)\
