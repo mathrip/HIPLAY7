@@ -28,7 +28,7 @@ def apply_segmentation(path_directory,steps,freesurf_output_dir,subj_name):
     expert_file = os.path.join(freesurf_output_dir, 'expert.opts')
     output_dir=os.path.join(freesurf_output_dir,subj_name)
 
-    print("INFO : Start cortical parcellation")
+    print("INFO : Start cortical parcellation (~35h)")
     recon_all = ["recon-all",
                    "-sd", "{}".format(freesurf_output_dir),
                    "-s", "{}".format(subj_name),
@@ -41,7 +41,7 @@ def apply_segmentation(path_directory,steps,freesurf_output_dir,subj_name):
     print("INFO : End of cortical parcellation. Results stored in {}".format(output_dir))
 
     # Perform Hippocampal segmentation
-    print("INFO : Start hippocampal parcellation")
+    print("INFO : Start hippocampal parcellation (~1h)")
     seghip = ["recon-all",
               "-sd", "{}".format(freesurf_output_dir),
               "-s", "{}".format(subj_name),
