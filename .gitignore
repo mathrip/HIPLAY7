@@ -4,6 +4,7 @@ Ratio_T1_PD/
 R1map/Other
 *.pyc
 .idea
-R1map/Pipeline_main.py
-R1map/myelin_content_v2.py
-R1map/Modules/Preprocess_mp2r_v2.py
+/R1map/.idea
+/R1map/Pipeline_main.py
+/R1map/myelin_content_v2.py
+/R1map/Modules/Preprocess_mp2r_v2.py
