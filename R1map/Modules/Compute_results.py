@@ -95,7 +95,8 @@ def apply_processResults(path_directory, steps, freesurf_output_dir, subj_name, 
 
     """
     freesurfer_subj = os.path.join(freesurf_output_dir, subj_name)
-
+    
+    print('INFO : Compute R1 values in different ROIs')
 
     # Register mask to original space
     ref_name = 'mri/rawavg.mgz'                                                     # file for registration to original space
