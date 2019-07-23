@@ -17,8 +17,6 @@ This program requires the following softwares and libraries :
 - Python (version 3.7)\
 Libraries :
    - nibabel
-   - numpy
-   - pandas
    - scipy
    - matplotlib
 
@@ -46,7 +44,7 @@ Please, make sure to add this two lines in you default setup file (.bashrc) :
 ### Installation
 - [ ] Copy the URL of the repository from GitHub
 - [ ] Dive into the folder where you want to store the program and open a terminal
-- [ ] Type git clone, and then paste the URL : `git clone https://github.com/USERNAME/REPOSITORY`
+- [ ] Type git clone, and then paste the URL : `git clone https://github.com/mathrip/HIPLAY7.git`
 - [ ] Press Enter. Your local clone will be created
 
 ## Usage
@@ -63,7 +61,7 @@ where :
   - --noseg (optional) : use this flag if you do not want to perform cortical and hippocampal parcellations. The program will only compute the first two steps. 
 
 Exemple :\
-`myelin_content_hippo.py 20190719_mr331057 /home/Documents/Hiplay_results --noseg` 
+`python myelin_content_hippo.py 20190719_mr331057 /home/Documents/Hiplay_results --noseg` 
 
 Notes : 
 - The whole process can take up to 40h for images resolution of 0.75mm iso.
