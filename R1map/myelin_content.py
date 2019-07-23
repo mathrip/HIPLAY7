@@ -175,9 +175,6 @@ def main():
         print('INFO : Create subject folder : {} '.format(subject_directory))
         os.makedirs(subject_directory)
 
-    # Dive into folder subject
-    print("INFO : Start processing for {}".format(subj_name))
-
     # Start steps
     steps = ['1.Inputs', '2.B1correction', '3.Segmentation', '4.Myelin_proxy']
 
@@ -190,8 +187,7 @@ def main():
         print('WARNING: folder {} already exist. Data are overwritten'.format(folder_name))
     else:
         os.makedirs(folder_path)
-
-    print("INFO : Start processing the input data ")
+        
     apply_processInput(deviceSeptT_directory, folder_path, NIP, date)
 
     del folder_path, folder_name
@@ -205,12 +201,10 @@ def main():
         print('WARNING: folder {} already exist. Data are overwritten'.format(folder_name))
     else:
         os.makedirs(folder_path)
-
-    print('INFO : Start B1 correction ')
+        
     apply_B1correction(subject_directory, steps,  project_directory)
 
     del folder_path, folder_name
-
 
     # #------------ 3. Segmentation  ------------------------------------------
 
@@ -222,10 +216,11 @@ def main():
             print('WARNING: folder {} already exist. Data are overwritten'.format(folder_name))
         else:
             os.makedirs(folder_path)
-
-        print('INFO : Start segmentation process')
+          
         apply_segmentation(subject_directory, steps,freesurf_output_dir, subj_name)
-
+        
+        del folder_path, folder_name
+        
 
     #------------ 4. Analysis--------------------------------------------------------
 
@@ -236,13 +231,12 @@ def main():
             print('WARNING: folder {} already exist. Data are overwritten'.format(folder_name))
         else:
             os.makedirs(folder_path)
-
-        print('INFO : Start processing the results')
+  
         apply_processResults(subject_directory, steps,freesurf_output_dir, subj_name, freesurferHome)
 
 
     #--------------END-----------------------------------------------------
-    print("INFO : Results for {} can be find in {}".format(subj_name,subject_directory))
+    print("INFO : End of process. Results for {} can be find in {}".format(subj_name,subject_directory))
 
 if __name__ == "__main__":
     main()
