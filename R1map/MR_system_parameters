@@ -1,3 +1,4 @@
+# parameters used to acquired the mp2rage sequence
 alpha1deg = 4
 alpha2deg = 5
 nbefore = 48

@@ -8,22 +8,19 @@ import warnings
 def apply_processInput(deviceSeptT_directory, acquisition_output_directory, NIP, date):
     """
     Download dicom images from a MRI scanner database, based on regular
-     expression to search the right folder + Copy in the output directory one dicom image per dicom folder
+    expression to search the right folder + Copy in the output directory one dicom image per dicom folder
 
     Parameters
     ----------
-    deviceSeptT_directory : string
-        path to the acquisition directory where the dicoms data are stored in folders DATE_NIP
-    acquisition_output_directory : string
-        path to the output directory where the nifti data are saved
-    NIP  : string
-        patient/control acquisition number
-    NIP  : string
-        patient/control date number in format yyyymmdd
-    acquisition_identifiers : list of string
-        pattern defining the dicoms data needed
-    acquisition_output : list of string
-        names to save the nifti data under
+        deviceSeptT_directory : string
+            path to the acquisition directory where the dicoms data are stored in folders DATE_NIP
+        acquisition_output_directory : string
+            path to the output directory where the nifti data are saved
+        NIP  : string
+            patient/control acquisition number
+        date  : string
+            patient/control date number in format yyyymmdd
+
 
     Outputs
     ---------
@@ -107,4 +104,3 @@ def apply_processInput(deviceSeptT_directory, acquisition_output_directory, NIP,
             os.rename(os.path.join(acquisition_output_directory, acquisition_nifti_identifiers[acq] + '.nii.gz'),
                       os.path.join(acquisition_output_directory, output_files_names[acq] + '.nii.gz'))
 
-    print("INFO : End of first part")

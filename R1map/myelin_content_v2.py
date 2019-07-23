@@ -16,7 +16,7 @@ import shutil
 import io
 import contextlib
 import argparse
-from Modules.Preprocess_mp2r import apply_processInput
+from Modules.Preprocess_mp2r_v2 import apply_processInput
 from Modules.B1correction import apply_B1correction
 from Modules.Perform_segmentation import apply_segmentation
 from Modules.Compute_results import apply_processResults
@@ -36,6 +36,7 @@ def get_path():
     freesurferHome = "/neurospin/grip/protocols/MRI/HIPLAY7_mr_2019/Prog/freesurfer"
 
     return project_directory, deviceSeptT_directory, freesurferHome
+
 
 
 def read_cli_args():
@@ -65,11 +66,32 @@ def read_cli_args():
         'outdir_path',
         metavar='out_dir',
         help='path where output files will be stored')
-    # ---- steps to do
+    # # ---- steps to do
+    # parser.add_argument(
+    #     'step_todo',
+    #     metavar='step_todo',
+    #     help='the steps to perform : 1 = perform ; 0 = avoid')
+    #-- optional arguments
     parser.add_argument(
-        'step_todo',
-        metavar='step_todo',
-        help='the steps to perform : 1 = perform ; 0 = avoid')
+        '--noseg',
+        action="store_true",
+        help='do not perform cortical and hippocampal parcellations')
+    parser.add_argument(
+        'b1map',
+        metavar='b1map',
+        help='path to b1map dicom folder')
+    parser.add_argument(
+        'T1map',
+        metavar='T1map',
+        help='path to T1map dicom folder')
+    parser.add_argument(
+        'T1uni',
+        metavar='T1uni',
+        help='path to uniform T1 dicom folder')
+    parser.add_argument(
+        'T1uni_den',
+        metavar='T1uni_den',
+        help='path to uniform denoised T1map dicom folder')
     # parse all arguments
     args = parser.parse_args()
 
@@ -88,19 +110,16 @@ def main():
     '''
     myelin_content_hippo code : main function
 
-    Parameters
-    ----------
+    Takes the following inputs :
         - DATE : date (yyyymmdd) of the patient acquisition
         - NIP : nip of the patient acquisition
+        - outdir_path : path to folder where results will be stored
+        - steps :
 
     Will output the following file in differents folders in the output directory
         1.Inputs
-            t1q.nii.gz : T1 map image from the MP2RAGE sequence
             t1uni.nii.gz : T1 uniform image from the MP2RAGE sequence
-            t1uni_den.nii.gz : T1 uniform and denoised image from the MP2RAGE sequence
             b1map.nii.gz : b1 map obtain from the xfl sequence
-            info_t1_image : one dicom image of the T1 map (to extract header information)
-            info_uni : one dicom image of the T1 uniform image (to extract header information)
             info_uni-den : one dicom image of the T1 uniform image (to extract header information)
             info_b1 : one dicom image of the b1 map (to extract header information)
         2.B1correction
@@ -128,14 +147,18 @@ def main():
     # parse command-line arguments
     args, cli_usage = read_cli_args()
 
-    date_NIP = args.date_NIP
+    subj_name = args.date_NIP
+    date = subj_name.split('_')[0]
+    NIP = subj_name.split('_')[1]
+
     processed_data_directory = args.outdir_path
-    steps_todo = [int(i) for i in str(args.step_todo)]
 
-    date = date_NIP.split('_')[0]
-    NIP = date_NIP.split('_')[1]
+    inputs_path = [" "," "," "," "]
+    inputs_path[0] = args.b1map
+    inputs_path[1] = args.T1map
+    inputs_path[2] = args.T1uni
+    inputs_path[3] = args.T1uni_den
 
-    subj_name = date + '_' + NIP
     steps = ['1.Inputs', '2.B1correction', '3.Segmentation', '4.Myelin_proxy']
 
     #------------- Initialisation main output folder & subject folder -----------------------------------
@@ -175,39 +198,37 @@ def main():
 
 
     #-------------1. Load DICOM and convert in Nifti-------------------
-    if steps_todo[0] == 1:
-        # Check if 1.Inputs directory already exist. If not create it.
-        folder_name = steps[0]
-        folder_path = os.path.join(subject_directory, folder_name)
-        if os.path.isdir(folder_path):
-            print('WARNING: folder {} already exist. Data are overwritten'.format(folder_name))
-        else:
-            os.makedirs(folder_path)
+    # Check if 1.Inputs directory already exist. If not create it.
+    folder_name = steps[0]
+    folder_path = os.path.join(subject_directory, folder_name)
+    if os.path.isdir(folder_path):
+        print('WARNING: folder {} already exist. Data are overwritten'.format(folder_name))
+    else:
+        os.makedirs(folder_path)
 
-        print("INFO : Start processing the input data : Loading and convert Dicom files to Nifti files")
-        apply_processInput(deviceSeptT_directory, folder_path, NIP, date)
+    print("INFO : Start processing the input data : Loading and convert Dicom files to Nifti files")
+    apply_processInput(folder_path, inputs_path)
 
-        del folder_path, folder_name
+    del folder_path, folder_name
 
     #----------- 2. B1 correction---------------------------------------------
 
-    if steps_todo[1] == 1:
-        # Check if 2.B1correction already exist. If not create it.
-        folder_name = steps[1]
-        folder_path = os.path.join(subject_directory, folder_name)
-        if os.path.isdir(folder_path):
-            print('WARNING: folder {} already exist. Data are overwritten'.format(folder_name))
-        else:
-            os.makedirs(folder_path)
+    # Check if 2.B1correction already exist. If not create it.
+    folder_name = steps[1]
+    folder_path = os.path.join(subject_directory, folder_name)
+    if os.path.isdir(folder_path):
+        print('WARNING: folder {} already exist. Data are overwritten'.format(folder_name))
+    else:
+        os.makedirs(folder_path)
 
-        print('INFO : Starting correction from B1')
-        apply_B1correction(subject_directory, steps,  project_directory)
+    print('INFO : Starting correction from B1')
+    apply_B1correction(subject_directory, steps,  project_directory)
 
-        del folder_path, folder_name
+    del folder_path, folder_name
 
 
     # #------------ 3. Segmentation  ------------------------------------------
-    if steps_todo[2] == 1 :
+    if not args.noseg:
         # Check if 3.Segmentation already exist. If not create it.
         folder_name = steps[2]
         folder_path = os.path.join(subject_directory, folder_name)
@@ -215,12 +236,12 @@ def main():
             print('WARNING: folder {} already exist. Data are overwritten'.format(folder_name))
         else:
             os.makedirs(folder_path)
-        print('Start of parcellisation')
+
+        print('INFO : Start segmentation process')
         apply_segmentation(subject_directory, steps,freesurf_output_dir, subj_name)
 
 
     #------------ 4. Analysis--------------------------------------------------------
-    if steps_todo[3] == 1:
         # Check if 4.Myelin_proxy already exist. If not create it. < 5
         folder_name = steps[3]
         folder_path = os.path.join(subject_directory, folder_name)
@@ -228,7 +249,8 @@ def main():
             print('WARNING: folder {} already exist. Data are overwritten'.format(folder_name))
         else:
             os.makedirs(folder_path)
-        print('INFO : Start processing the results')
+
+        print('INFO : Start processing the results : compute R1 value in different ROI')
         apply_processResults(subject_directory, steps,freesurf_output_dir, subj_name, freesurferHome)
 
 
