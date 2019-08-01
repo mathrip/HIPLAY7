@@ -17,12 +17,16 @@ This program requires the following softwares and libraries :
 - Python (version 3.7)\
 Libraries :
    - nibabel
-   - numpy
-   - pandas
    - scipy
-   - matplotlib\
-If you do not have Python installed, we recommend to install Python 3.7 from the [anaconda distribution](https://www.anaconda.com/distribution/#linux) and to follow the [instructions](https://docs.anaconda.com/anaconda/install/linux/)\
-Each library can be then install using the following command : `pip install LibraryName`\
+   - matplotlib
+
+If you do not have Python installed, we recommend to install Python 3.7 from the [anaconda distribution](https://www.anaconda.com/distribution/#linux) and to follow the instructions [here](https://docs.anaconda.com/anaconda/install/linux/)\
+Then, each library can be then install using the following commands : 
+```
+conda install nibabel`
+conda install scipy
+conda install matplotlib
+```
 
 - FSL 6.0
 To install FSL 6.0 please refers to the instructions found in the following website : [FslInstallation](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation/Linux)\
@@ -45,11 +49,11 @@ Please, make sure to add this two lines in you default setup file (.bashrc) :
 ### Installation
 - [ ] Copy the URL of the repository from GitHub
 - [ ] Dive into the folder where you want to store the program and open a terminal
-- [ ] Type git clone, and then paste the URL : `git clone https://github.com/USERNAME/REPOSITORY`
+- [ ] Type git clone, and then paste the URL : `git clone https://github.com/mathrip/HIPLAY7.git`
 - [ ] Press Enter. Your local clone will be created
 
 ## Usage
- :heavy_exclamation_mark: Before to run the program, make sure to update the following path in the myelin_content.py script : \
+ :heavy_exclamation_mark: Before to run the program, make sure to update the following path in the `myelin_content.py` script : \
 *deviceSept_directory* : which is the directory where all the acquisition are stored with a defined architecture\
 *freesurferHome* : which is the path where freesurfer has been stored.
 
@@ -62,7 +66,7 @@ where :
   - --noseg (optional) : use this flag if you do not want to perform cortical and hippocampal parcellations. The program will only compute the first two steps. 
 
 Exemple :\
-`myelin_content_hippo.py 20190719_mr331057 /home/Documents/Hiplay_results --noseg` 
+`python myelin_content_hippo.py 20190719_mr331057 /home/Documents/Hiplay_results --noseg` 
 
 Notes : 
 - The whole process can take up to 40h for images resolution of 0.75mm iso.

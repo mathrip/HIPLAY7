@@ -44,10 +44,11 @@ def apply_processInput(deviceSeptT_directory, acquisition_output_directory, NIP,
     acquisition_nifti_identifiers = ['b1', 't1_image', 'uni_images', 'uni-den']
     output_files_names = ['b1map', 't1q', 't1uni', 't1uni_den']
 
-
+   
 
     #-----------------PROCESS--------------------------------------------------------------------------------------
-
+    print("INFO : Get DICOM data and convert to NIFTI in folder {}".format(steps[0]))
+    
     # Locate the acquisition data folder and dive into the corresponding nip
     subject_acquisition_date_directory = os.path.join(deviceSeptT_directory, date)
     # List the corresponding folders

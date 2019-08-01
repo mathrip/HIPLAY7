@@ -49,7 +49,8 @@ def apply_B1correction(path_directory, steps, project_directory):
     [2] M.Jenkinson et al, Improved Optimisation for the Robust and Accurate Linear Registration and Motion Correction of Brain Images, NeuroImage, 2002
 
     """
-
+   
+    print('INFO : Start B1 correction and save results in folder {} '.format(steps[1]))
     # ---------- PART 1 : Process the B1map & Add B1+ correction to T1map------------------------------------------------------
     from subprocess import Popen, PIPE
 
@@ -256,7 +257,6 @@ def apply_B1correction(path_directory, steps, project_directory):
     # Compute the inverse image of T1 map corrected using FSL
     input_path = os.path.join(path_directory, steps[1], 't1q_cor.nii.gz')
     output_path = os.path.join(path_directory, steps[1], 'R1q_cor.nii.gz')
-    print('INFO : Create R1 map')
     multiple = '1000'
     fslmaths = ["fslmaths",
                 "{}".format(input_path),
