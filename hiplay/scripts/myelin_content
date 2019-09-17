@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 """ script to compute a myelin proxy (R1 values) in differents regions of the cortex and hippocampus
 
 This code was developped by Mathilde Ripart at Neurospin (2019)
@@ -16,28 +18,19 @@ import shutil
 import io
 import contextlib
 import argparse
-from Modules.Preprocess_mp2r import apply_processInput
-from Modules.B1correction import apply_B1correction
-from Modules.Perform_segmentation import apply_segmentation
-from Modules.Compute_results import apply_processResults
-# import importlib
-# importlib.reload(T1map.Perform_segmentation_V2)
+import hiplay.b1correction as b1correction
+from hiplay.preprocess_mp2r import apply_processInput
+from hiplay.b1correction import apply_B1correction
+from hiplay.perform_segmentation import apply_segmentation
+from hiplay.compute_results import apply_processResults
 
 
-#    -------------------SET UP PATHS HERE -------------------------------------------------------------
-def get_path():
-    # Path to project directory
-    project_directory = os.path.dirname(os.path.realpath('myelin_content.py'))
+#functions
+def is_directory(dirarg):
+    if not os.path.isdir(dirarg):
+        raise argparse.ArgumentError('WARNING : The directory {0} does not exist!'.format(dirarg))
+    return dirarg
 
-    # Path to directory which contains all the acquisitions in dicom data
-    deviceSeptT_directory = "/neurospin/acquisition/database/Investigational_Device_7T"
-
-    # Path to freesurfer Home
-    freesurferHome = "/neurospin/grip/protocols/MRI/HIPLAY7_mr_2019/Prog/freesurfer"
-
-    return project_directory, deviceSeptT_directory, freesurferHome
-
-#--------------------------------------------------------------------------------------------------------
 
 def read_cli_args():
     """Read command-line interface arguments
@@ -51,28 +44,37 @@ def read_cli_args():
         args (argparse.Namespace): parsed arguments
         cli_usage (string): command-line interface usage message
     """
+
+    from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+
     # read command line arguments
     cli_description = 'script to compute a myelin proxy (R1 values) in differents regions of the cortex and hippocampus'
-    parser = argparse.ArgumentParser(description=cli_description)
+    parser = ArgumentParser(description=cli_description,
+                            formatter_class=ArgumentDefaultsHelpFormatter)
+    required = parser.add_argument_group("required arguments")
     # add arguments
     #-- mandatory arguments
     #---- Patient identifier
-    parser.add_argument(
-        'date_NIP',
-        metavar='date_NIP',
-        help='format yyyymmdd_xxxxxxxx')
+    parser.add_argument('date_NIP',
+                        metavar='date_NIP',
+                        default=True,
+                        help='format yyyymmdd_xxxxxxxx')
     #---- output dir
-    parser.add_argument(
-        'outdir_path',
-        metavar='out_dir',
-        help='path where output files will be stored')
+    parser.add_argument('outdir_path',
+                        metavar='out_dir',
+                        default=True,
+                        help='path where output files will be stored')
+
     #-- optional arguments
-    parser.add_argument(
-        '--noseg',
-        action="store_true",
-        help='do not perform cortical and hippocampal parcellations')
-    # parse all arguments
+    #--- No segmentation flag
+    parser.add_argument('--noseg',
+                        action="store_true",
+                        help='do not perform cortical and hippocampal parcellations')
+
+
+# parse all arguments
     args = parser.parse_args()
+    
 
     # store usage message in string
     cli_usage = None
@@ -85,10 +87,44 @@ def read_cli_args():
     return args, cli_usage
 
 
+def check_version(freesurferHome, fslHome):
+    import re
+
+    #Global version
+    glob_version_freesurfer='v6.0.0'
+    glob_version_fsl = '6.0.0'
+
+    #Freesurfer
+    version_file  = os.path.join(freesurferHome,'build-stamp.txt')
+    pattern = re.compile('^v([0-9]+)([.])([0-9]+)([.])([0-9]+)?$')
+    data = open(version_file).read().split("-")
+    version_freesurfer = [pattern.search(f).group() for f in data if pattern.search(f) is not None][0]
+
+    del version_file, pattern, data
+
+    # fsl
+    version_file = os.path.join(fslHome, 'etc/fslversion')
+    pattern = re.compile('^([0-9]+)([.])([0-9]+)([.])([0-9]+)?$')
+    data = open(version_file).read().split()
+    version_fsl = [pattern.search(f).group() for f in data if pattern.search(f) is not None][0]
+
+    #check
+    if version_freesurfer != glob_version_freesurfer:
+        print('WARNING : The scripts required version {} of freesurfer and version {} has been given'.format(glob_version_freesurfer,version_freesurfer))
+        exit()
+    else:
+        print('Use of Freesurfer {} find at {}'.format(glob_version_freesurfer,freesurferHome))
+    if version_fsl != glob_version_fsl:
+        print('WARNING : The scripts required version {} of fsl and version {} has been given'.format(glob_version_fsl, version_fsl))
+        exit()
+    else:
+        print('Use of Freesurfer {} find at {}'.format(glob_version_fsl,fslHome))
+
+
 def main():
     '''
     main script of the myelin_content program.
-    The program first performs a R1map (myelin proxy) corrected from B1+ inhomogeneities based on the uniform T1 contrast from the mp2rage sequence and a b1map.
+    The program first performs a R1map (myelin proxy) corrected from B1+ inhomogeneities based on the uniform T1 contrast from the 	mp2rage sequence and a b1map.
     A cortical and hippocampal parcellation are performed using freesurfer, and the R1 values are quantified in the differents ROIs. This part is optional.
 
     Parameters
@@ -129,21 +165,44 @@ def main():
     '''
 
 
+	#--------------CHANGE HERE PATHS to freesurfer and fsl-----------
+    path_freesurfer = 'False'     #Replace False by freesurfer path
+    path_fsl = 'False'            #Replace False by fsl path
+    
+    #------------- Initialisation -----------------------------------
 
-
-    #------------- Initialisation main output folder & subject folder -----------------------------------
-
-    project_directory, deviceSeptT_directory, freesurferHome = get_path()
-
-    # parse command-line arguments
+    # Parse command-line arguments
     args, cli_usage = read_cli_args()
 
-    date_NIP = args.date_NIP
-    date = date_NIP.split('_')[0]
-    NIP = date_NIP.split('_')[1]
-    subj_name = date + '_' + NIP
+    # Get the name of the subject in format date_NIP
+    subj_name = args.date_NIP
 
+    # Get the main output directory
     processed_data_directory = args.outdir_path
+
+    # Get the path to freesurfer V6.0 or take default one
+    if path_freesurfer != 'False':
+        freesurferHome = path_freesurfer
+    else:
+        freesurferHome = "/i2bm/local/freesurfer-6.0.0"
+
+    # Get the path to fsl V6.0 or take default one
+    if path_fsl != 'False':
+        fslHome = path_fsl
+    else:
+        fslHome = "/i2bm/local/fsl-6.0.0"
+
+    # Path to project directory
+    project_directory = os.path.dirname(b1correction.__file__)
+
+    # Path to directory which contains all the acquisitions in dicom data
+    deviceSeptT_directory = "/neurospin/acquisition/database/Investigational_Device_7T"
+
+
+    # Check the version of freesurfer and fsl
+    check_version(freesurferHome,fslHome)
+
+    # ------------- Create main output folder -----------------------------------
 
     # Check if main directory exists. If not create it
     output_folder = processed_data_directory
@@ -165,44 +224,54 @@ def main():
     expert_path =  os.path.join(project_directory,'expert.opts')
     expert_newpath = os.path.join(freesurf_output_dir, 'expert.opts')
     if not os.path.isfile(expert_newpath):
-        shutil.copyfile(expert_path, expert_newpath)
+        try:
+            shutil.copyfile(expert_path, expert_newpath)
+        except FileNotFoundError:
+            print('Could not copy the expert.opt file from the hiplay package.')
 
-    #Check if subject folder already exists. If yes dive into, if not create it.
+    # ------------- Create subject output directory -----------------------------------
+
+    #Check if subject folder already exists. If not create it. If yes ask for delete
     subject_directory = os.path.join(output_folder, subj_name)
-    if os.path.isdir(subject_directory):
-        print('INFO : Dive into the subject output folder : {} '.format(subject_directory))
-    else:
-        print('INFO : Create subject folder : {} '.format(subject_directory))
-        os.makedirs(subject_directory)
+    try:
+        os.mkdir(subject_directory)
+    except FileExistsError:
+        print('Folder {} already exists in {}. Data are overwritten'.format(subj_name, output_folder))
 
-    # Start steps
+
+    #################### Start steps ##################################################
+
     steps = ['1.Inputs', '2.B1correction', '3.Segmentation', '4.Myelin_proxy']
 
     #-------------1. Load DICOM and convert in Nifti-------------------
 
-    # Check if 1.Inputs directory already exist. If not create it.
+    # create 1.Inputs directory
     folder_name = steps[0]
     folder_path = os.path.join(subject_directory, folder_name)
-    if os.path.isdir(folder_path):
-        print('WARNING: folder {} already exist. Data are overwritten'.format(folder_name))
-    else:
-        os.makedirs(folder_path)
-        
-    apply_processInput(deviceSeptT_directory, folder_path, NIP, date)
+    try:
+        os.mkdir(folder_path)
+    except FileExistsError:
+        print('Folder {} already exists in {}. Data are overwritten'.format(folder_name, subj_name))
+
+    #run preprocess
+    date = subj_name.split('_')[0]
+    NIP = subj_name.split('_')[1]
+    apply_processInput(deviceSeptT_directory, steps, folder_path, NIP, date)
 
     del folder_path, folder_name
 
     #----------- 2. B1 correction---------------------------------------------
 
-    # Check if 2.B1correction already exist. If not create it.
+    # Check if 2.Data_unbiased already exist. If not create it.
     folder_name = steps[1]
     folder_path = os.path.join(subject_directory, folder_name)
-    if os.path.isdir(folder_path):
-        print('WARNING: folder {} already exist. Data are overwritten'.format(folder_name))
-    else:
-        os.makedirs(folder_path)
-        
-    apply_B1correction(subject_directory, steps,  project_directory)
+    try:
+        os.mkdir(folder_path)
+    except FileExistsError:
+        print('Folder {} already exists in {}. Data are overwritten'.format(folder_name, subj_name))
+
+    # run correction
+    apply_B1correction(subject_directory, steps, project_directory, fslHome)
 
     del folder_path, folder_name
 
@@ -212,30 +281,32 @@ def main():
         # Check if 3.Segmentation already exist. If not create it.
         folder_name = steps[2]
         folder_path = os.path.join(subject_directory, folder_name)
-        if os.path.isdir(folder_path):
-            print('WARNING: folder {} already exist. Data are overwritten'.format(folder_name))
-        else:
-            os.makedirs(folder_path)
-          
-        apply_segmentation(subject_directory, steps,freesurf_output_dir, subj_name)
-        
+        try:
+            os.mkdir(folder_path)
+        except FileExistsError:
+            print('Folder {} already exists in {}. Data are overwritten'.format(folder_name, subj_name))
+
+        # run segmentation process
+        apply_segmentation(subject_directory, steps, freesurf_output_dir, freesurferHome, subj_name)
+
         del folder_path, folder_name
-        
+
 
     #------------ 4. Analysis--------------------------------------------------------
 
-        # Check if 4.Myelin_proxy already exist. If not create it. < 5
+        # Check if 4.Myelin_proxy already exist. If not create it.
         folder_name = steps[3]
         folder_path = os.path.join(subject_directory, folder_name)
-        if os.path.isdir(folder_path):
-            print('WARNING: folder {} already exist. Data are overwritten'.format(folder_name))
-        else:
-            os.makedirs(folder_path)
-  
+        try:
+            os.mkdir(folder_path)
+        except FileExistsError:
+            print('Folder {} already exists in {}. Data are overwritten'.format(folder_name, subj_name))
+
         apply_processResults(subject_directory, steps,freesurf_output_dir, subj_name, freesurferHome)
 
-
+        del folder_path, folder_name
     #--------------END-----------------------------------------------------
+
     print("INFO : End of process. Results for {} can be find in {}".format(subj_name,subject_directory))
 
 if __name__ == "__main__":

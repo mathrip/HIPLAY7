@@ -5,11 +5,12 @@ import re
 import nibabel as nib
 import numpy as np
 import math
+import subprocess as sub
 from scipy import signal as sig
 import matplotlib.tri as tri
 
 
-def apply_B1correction(path_directory, steps, project_directory):
+def apply_B1correction(path_directory, steps, project_directory, fslHome):
     """
     compute T1 & R1 quantitative map corrected from B1+ inhomogeneities using an algorithm [1] (Part 1 & 2)
     (optional) reconstruct T1 uniform corrected from B1+ inhomogeneities (uncomment Part 3)
@@ -36,11 +37,12 @@ def apply_B1correction(path_directory, steps, project_directory):
 
     Outputs
     ---------
-    Compute the following output in the folder "2.B1correction" of the subject directory :
+    Compute the following output in the folder "2.B1_correction" of the subject directory :
             b1_to_mp2r.nii.gz : b1map resampled at the T1 mp2rage resolution
             t1q_cor.nii : T1 map corrected from the B1+
             R1q_cor.nii : R1 map corrected from the B1+
             (optional) t1uni_cor.nii : T1 uni corrected from the B1+
+            MR_system_parameters : text file containing the MR parameters used on the acquisition protocol
 
 
     References
@@ -76,15 +78,12 @@ def apply_B1correction(path_directory, steps, project_directory):
     path_in = os.path.join(path_directory, steps[1], 'b1_to_mp2r.nii.gz')
     path_ref = os.path.join(path_directory, steps[0], 't1uni.nii.gz')
     path_out = os.path.join(path_directory, steps[1], 'b1_to_mp2r.nii.gz')
-    flirt = ["flirt",
-             "-in", "{}".format(path_in),
-             "-ref", "{}".format(path_ref),
-             "-usesqform",
-             "-applyxfm",
-             "-out", "{}".format(path_out)]
-    Popen(flirt, stdout=PIPE)
-    flirt_cmd = Popen(flirt, stdout=PIPE)
-    flirt_output, flirt_error = flirt_cmd.communicate()
+
+    # Initialise fsl variable environment and run flirt
+    ini_fsl = format(". {}/etc/fslconf/fsl.sh".format(fslHome))
+    flirt = format("{}/bin/flirt -in {} -ref {} -usesqform -applyxfm -out {}".format(fslHome,path_in, path_ref, path_out))
+    command = ini_fsl + ';' + flirt
+    sub.call(command, shell=True)
     del path_in, path_out, path_ref
 
     # 3. Apply offset FAnom outside B1+ FOV
@@ -142,7 +141,7 @@ def apply_B1correction(path_directory, steps, project_directory):
 
     # 7. Calculate theoretical MP2RAGE signal for a given B1rel and T1 range
     # Update MP2RAGE parameters in MR_system_parameters.txt (this should be the protocol run on the MR system)
-    file_path = os.path.join(project_directory, 'MR_system_parameters')
+    file_path = os.path.join(project_directory,'MR_system_parameters')
     newfile_path = os.path.join(path_directory, steps[1], 'MR_system_parameters')
     shutil.copyfile(file_path, newfile_path)
     param_system = [0 for i in range(9)]
@@ -258,14 +257,11 @@ def apply_B1correction(path_directory, steps, project_directory):
     input_path = os.path.join(path_directory, steps[1], 't1q_cor.nii.gz')
     output_path = os.path.join(path_directory, steps[1], 'R1q_cor.nii.gz')
     multiple = '1000'
-    fslmaths = ["fslmaths",
-                "{}".format(input_path),
-                "-recip",
-                "-mul", "{}".format(multiple),
-                "{}".format(output_path)]
-    fslmaths_cmd = Popen(fslmaths, stdout=PIPE)
-    fslmaths_output, fslmaths_error = fslmaths_cmd.communicate()
 
+    ini_fsl = format(". {}/etc/fslconf/fsl.sh".format(fslHome))
+    fslmaths = format("{}/bin/fslmaths {} -recip -mul {} {}".format(fslHome, input_path, multiple, output_path))
+    command = ini_fsl + ';' + fslmaths
+    sub.call(command, shell=True)
 
     # # ----------------PART 3 :  Recreate uniform T1 volume corrected from B1+ ---------------------------------------------------------#
     # # Uncomment if you want to reconstruct the T1 uniform corrected from B1+ inhomogeneities

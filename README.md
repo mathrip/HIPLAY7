@@ -1,12 +1,12 @@
 # HIPLAY7 –  myelin_content
 
- `myelin_content.py`  – compute a myelin proxy (R1 value) for the grey matter and the white matter in differents regions of the hippocampus and the cortex 
+ `myelin_content`  – compute a myelin proxy (R1 value) for the grey matter and the white matter in differents regions of the hippocampus and the cortex 
 
 ## Overview
 This program performs four steps and will create one folder for each step :
  1. **Inputs** : Extracts the needed inputs from the acquisition folder. Results save as nifti format (.nii)
- 2. **B1correction** : Computes a corrected R1 map from B1+ inhomogeneities, using the information from a B1 map and the uniform T1 given by the MP2RAGE sequence. Results save as nifti format (.nii)
- 3. **Segmentation** : Performs a cortical and hippocampal parcellation using Freesurfer based on a uniform and denoised T1w image given by the MP2RAGE sequence. Results save as freesurfer format (.mgz)
+ 2. **B1_correction** : Computes a corrected R1 map from B1+ inhomogeneities, using the information from a B1 map and the uniform T1 given by the MP2RAGE sequence. Results save as nifti format (.nii)
+ 3. **Segmentation** : Performs a cortical and hippocampal parcellation using Freesurfer based on a uniform and denoised T1w image given by the MP2RAGE sequence. Results save as freesurfer format (.mgz).
  4. **Results** : Computes an average R1 value in each cortical and hippocampal regions. Results save as .txt files. 
   
 ## Getting Started
@@ -19,59 +19,42 @@ Libraries :
    - nibabel
    - scipy
    - matplotlib
-
-If you do not have Python installed, we recommend to install Python 3.7 from the [anaconda distribution](https://www.anaconda.com/distribution/#linux) and to follow the instructions [here](https://docs.anaconda.com/anaconda/install/linux/)\
-Then, each library can be then install using the following commands : 
-```
-conda install nibabel`
-conda install scipy
-conda install matplotlib
-```
-
+   - dicom2nifti
 - FSL 6.0
-To install FSL 6.0 please refers to the instructions found in the following website : [FslInstallation](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FslInstallation/Linux)\
-Please, make sure to add this two lines in you default setup file (.bashrc) : 
-```
-FSLDIR=pathWhereFSLHasBeenStored
-. ${FSLDIR}/etc/fslconf/fsl.sh
-PATH=${FSLDIR}/bin:${PATH}
-export FSLDIR PATH
-```
+- Freesurfer V.6
 
-- Freesurfer V.6\
-To install freesurfer V.6 please refers to the instructions found in the following website : [Freesurfer V.6 installation](https://surfer.nmr.mgh.harvard.edu/fswiki/DownloadAndInstall)\
-Please, make sure to add this two lines in you default setup file (.bashrc) : 
-```
-  export FREESURFER_HOME= pathWhereFreesurferHasBeenStored
-  source $FREESURFER_HOME/SetUpFreeSurfer.sh
-```
+WARNING: This program requires to have access to the folder "Acquisition" and "I2BM" of Neurospin. 
 
 ### Installation
-- [ ] Copy the URL of the repository from GitHub
-- [ ] Dive into the folder where you want to store the program and open a terminal
-- [ ] Type git clone, and then paste the URL : `git clone https://github.com/mathrip/HIPLAY7.git`
-- [ ] Press Enter. Your local clone will be created
+- [ ] Open a terminal and paste the following sentence : `pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple hiplay`
+Press enter. Your package will be installed. 
+- [ ] Open your default setup file (.bashrc) : `gedit ~/.bashrc` 
+Add the following lines in the .bashrc (do not change anything else) : 
+```
+export FREESURFER_HOME=/i2bm/local/freesurfer-6.0.0
+source $FREESURFER_HOME/SetUpFreeSurfer.sh
+```
+Close the terminal
+- [ ] Open a new terminal, you should see `Setting up environment for FreeSurfer/FS-FAST (and FSL)`.
+Your hiplay package is ready to be used. 
 
 ## Usage
- :heavy_exclamation_mark: Before to run the program, make sure to update the following path in the `myelin_content.py` script : \
-*deviceSept_directory* : which is the directory where all the acquisition are stored with a defined architecture\
-*freesurferHome* : which is the path where freesurfer has been stored.
-
-To launch the recombine.py script, run \
-`python myelin_content_hippo.py <DATE_NIP> <output_path> [optional arguments]`
+To launch the script, run \
+`myelin_content <DATE_NIP> <output_path> [optional arguments]`
 
 where : 
   - <DATE_NIP> : the acquisition date in format yyyymmdd and the patient NIP. Correspond to subject identifier
   - <output_path> : the path to the output folder
-  - --noseg (optional) : use this flag if you do not want to perform cortical and hippocampal parcellations. The program will only compute the first two steps. 
+  - --noseg (optional) : use this flag if you do not want to perform cortical and hippocampal parcellations. The program will only compute the first two steps.
 
 Exemple :\
-`python myelin_content_hippo.py 20190719_mr331057 /home/Documents/Hiplay_results --noseg` 
+`myelin_content 20190719_mr331057 /home/Documents/Hiplay_results --noseg` 
 
 Notes : 
 - The whole process can take up to 40h for images resolution of 0.75mm iso.
 - This program has been only test for Linux users.
 - For more information about the inputs/outputs data, please refers to the functions description within the python script.
+- You can set up your own paths to freesurfer and fsl in the `myelin_content` script if you do not want to use the default ones.
 
 ## Authors
 

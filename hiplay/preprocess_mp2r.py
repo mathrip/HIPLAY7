@@ -2,10 +2,9 @@ import subprocess
 import shutil
 import os
 import re
-import warnings
+import sys
 
-
-def apply_processInput(deviceSeptT_directory, acquisition_output_directory, NIP, date):
+def apply_processInput(deviceSeptT_directory, steps, acquisition_output_directory, NIP, date):
     """
     Download dicom images from a MRI scanner database, based on regular
     expression to search the right folder + Copy in the output directory one dicom image per dicom folder
@@ -14,6 +13,8 @@ def apply_processInput(deviceSeptT_directory, acquisition_output_directory, NIP,
     ----------
         deviceSeptT_directory : string
             path to the acquisition directory where the dicoms data are stored in folders DATE_NIP
+        steps : list of strings
+             list containing the name of the steps performed on the pipeline
         acquisition_output_directory : string
             path to the output directory where the nifti data are saved
         NIP  : string
@@ -25,6 +26,7 @@ def apply_processInput(deviceSeptT_directory, acquisition_output_directory, NIP,
     Outputs
     ---------
     the following outputs are saved in the 1.Inputs folder:
+            t1q.nii.gz : quantitative T1 map from the MP2RAGE sequence
             t1uni.nii.gz : T1 uniform image from the MP2RAGE sequence
             t1uni_den.nii.gz : T1 uniform and denoised image from the MP2RAGE sequence
             b1map.nii.gz : b1 map obtain from the xfl sequence
@@ -44,11 +46,11 @@ def apply_processInput(deviceSeptT_directory, acquisition_output_directory, NIP,
     acquisition_nifti_identifiers = ['b1', 't1_image', 'uni_images', 'uni-den']
     output_files_names = ['b1map', 't1q', 't1uni', 't1uni_den']
 
-   
+
 
     #-----------------PROCESS--------------------------------------------------------------------------------------
     print("INFO : Get DICOM data and convert to NIFTI in folder {}".format(steps[0]))
-    
+
     # Locate the acquisition data folder and dive into the corresponding nip
     subject_acquisition_date_directory = os.path.join(deviceSeptT_directory, date)
     # List the corresponding folders
@@ -71,10 +73,19 @@ def apply_processInput(deviceSeptT_directory, acquisition_output_directory, NIP,
                  if acq_pattern.search(f) is not None]
             # If two or more matching pattern are found, take the first one
             # by defaults and raise a warning
-            if len(matching_acquisition_folders) >= 2:
-                warnings.warn('Careful! \n Find {} acquisitions folders matching you\'re request: {}. Taking '
-                              'the first one.'.format(len(matching_acquisition_folders), matching_acquisition_folders))
-                matching_acquisition_folder = matching_acquisition_folders[0]
+            if len(matching_acquisition_folders) >= 2 :
+                print('WARNING : Find {} acquisition folders matching your request: {}.'.format(len(matching_acquisition_folders), matching_acquisition_folders))
+                try:
+                    num = int(input("Please enter the acquisition number you would like (1= first, 2=second, ...) = "))
+                except ValueError:
+                    print("Oops!  That was no valid number.  Try again...")
+
+                if num <= len(matching_acquisition_folders) :
+                    matching_acquisition_folder = matching_acquisition_folders[num-1]
+                else :
+                    raise ValueError("Number out of range!")
+            elif len(matching_acquisition_folders) == 0 :
+                raise FileNotFoundError("Could not find an acquisition matching '{}' in the subject's acquisition folder {}".format(acquisition_dicom_identifiers[acq], subject_dicom))
             else:
                 matching_acquisition_folder = matching_acquisition_folders[0]
 
@@ -105,3 +116,5 @@ def apply_processInput(deviceSeptT_directory, acquisition_output_directory, NIP,
             os.rename(os.path.join(acquisition_output_directory, acquisition_nifti_identifiers[acq] + '.nii.gz'),
                       os.path.join(acquisition_output_directory, output_files_names[acq] + '.nii.gz'))
 
+    else :
+        raise OSError('Could not find folder matching the subject {} in the acquisition folder {}'.format(NIP, deviceSeptT_directory))
