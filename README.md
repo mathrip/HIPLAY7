@@ -26,7 +26,7 @@ Libraries :
 WARNING: This program requires to have access to the folder "Acquisition" and "I2BM" of Neurospin. 
 
 ### Installation
-- [ ] Open a terminal and paste the following sentence : `pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple hiplay`
+- [ ] Open a terminal and paste the following sentence : `pip install git+https://github.com/mathrip/HIPLAY7#egg=HIPLAY7`
 Press enter. Your package will be installed. 
 - [ ] Open your default setup file (.bashrc) : `gedit ~/.bashrc` 
 Add the following lines in the .bashrc (do not change anything else) : 
